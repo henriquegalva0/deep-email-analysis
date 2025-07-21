@@ -1,0 +1,7 @@
+transformers==4.40.0
+datasets
+pandas
+scikit-learn
+torch
+tf-keras
+accelerate
