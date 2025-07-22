@@ -64,7 +64,7 @@ def inspecionar_unicode(texto):
         'nome': unicodedata.name(c, 'Desconhecido')
     } for i, c in enumerate(texto)]
 
-def analisar_mensagem(mensagem):
+def retorno_CaractereConteudo(mensagem):
   fator=0
   print("Análise de Segurança da Mensagem")
 
@@ -73,8 +73,40 @@ def analisar_mensagem(mensagem):
   print("\nCaracteres invisíveis:")
   if invisiveis:
     print("Caractere invisível detectado")
-    fator+=2
-    for inv in invisiveis: fator+=0.1 #print(f" - Posição {inv['posição']}: {inv['caractere']} ({inv['nome_unicode']})")
+    fator+=3
+    for inv in invisiveis: fator+=0.5 #print(f" - Posição {inv['posição']}: {inv['caractere']} ({inv['nome_unicode']})")
+  else: print(" - Nenhum encontrado.")
+
+  print("\nVerificação de scripts misturados:")
+  scripts = detectar_scripts_misturados(mensagem)
+  actual_scripts = {k:v for k,v in scripts.items() if k != "Outros" or any("LETTER" in unicodedata.name(char[1], "") for char in v)}
+
+  if len(actual_scripts) > 1:
+    print("Mistura de alfabetos detectada\n")
+    fator+=4
+    for script, chars in scripts.items():
+      if script != "Outros" or any("LETTER" in unicodedata.name(char[1], "") for char in chars):
+        fator+=0.8
+        #for pos, char, nome in chars: print(f"   • {script} — '{char}' (posição {pos}): {nome}")
+  else: print("Nenhuma mistura suspeita de alfabetos")
+
+  quantia_pontuacao=sum(1 for d in mensagem if d in ["!!","!!!","??","???"])
+
+  if quantia_pontuacao: fator+=1.5
+
+  return fator
+
+def retorno_CaractereAssunto(mensagem):
+  fator=0
+  print("Análise de Segurança da Mensagem")
+
+  invisiveis = detectar_invisiveis(mensagem)
+
+  print("\nCaracteres invisíveis:")
+  if invisiveis:
+    print("Caractere invisível detectado")
+    fator+=3
+    for inv in invisiveis: fator+=0.5 #print(f" - Posição {inv['posição']}: {inv['caractere']} ({inv['nome_unicode']})")
   else: print(" - Nenhum encontrado.")
 
   print("\nVerificação de scripts misturados:")
@@ -86,11 +118,26 @@ def analisar_mensagem(mensagem):
     fator+=3
     for script, chars in scripts.items():
       if script != "Outros" or any("LETTER" in unicodedata.name(char[1], "") for char in chars):
-        fator+=0.3
-        for pos, char, nome in chars: print(f"   • {script} — '{char}' (posição {pos}): {nome}")
+        fator+=0.8
+        #for pos, char, nome in chars: print(f"   • {script} — '{char}' (posição {pos}): {nome}")
   else: print("Nenhuma mistura suspeita de alfabetos")
+
+  caracteres_estranhos = [
+    '$', '%', '&', '*', '+',
+    ';', '<', '=', '>', '?', '@', '\\', '^', '`', '~',
+    '©', '®', '€', '£', '¥', '§', '¶', '¤', '×', '÷', '°', '™'
+  ]
+
+  caracteres_estranhos_identificados=sum(1 for c in mensagem if c in caracteres_estranhos)
+
+  if caracteres_estranhos_identificados > 0 and caracteres_estranhos_identificados < 3: fator+=2
+  elif caracteres_estranhos_identificados >= 3: fator +=3
+
+  quantia_pontuacao=sum(1 for d in mensagem if d in ["!","?"])
+
+  if quantia_pontuacao>2 and quantia_pontuacao<4: fator+=1
+  if quantia_pontuacao>4: fator+=2
+
   return fator
 
-# Exemplo
-mensagem = """gооgle\u200b.com"""
-print(analisar_mensagem(mensagem))
+#gооgle\u200b.com
